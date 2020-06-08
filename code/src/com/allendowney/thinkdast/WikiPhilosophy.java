@@ -1,35 +1,37 @@
 package com.allendowney.thinkdast;
 
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 public class WikiPhilosophy {
 
     final static List<String> visited = new ArrayList<String>();
-    final static WikiFetcher wf = new WikiFetcher();
+    final static WikiFetcher wf = WikiFetcher.getInstance();
 
     /**
      * Tests a conjecture about Wikipedia and Philosophy.
-     *
+     * <p>
      * https://en.wikipedia.org/wiki/Wikipedia:Getting_to_Philosophy
-     *
+     * <p>
      * 1. Clicking on the first non-parenthesized, non-italicized link
      * 2. Ignoring external links, links to the current page, or red links
      * 3. Stopping when reaching "Philosophy", a page with no links or a page
-     *    that does not exist, or when a loop occurs
+     * that does not exist, or when a loop occurs
      *
      * @param args
      * @throws IOException
      */
     public static void main(String[] args) throws IOException {
+        // String destination = "https://baike.baidu.com/item/张学良";
         String destination = "https://en.wikipedia.org/wiki/Philosophy";
-        String source = "https://en.wikipedia.org/wiki/Java_(programming_language)";
+        // String source = "https://en.wikipedia.org/wiki/Java_(programming_language)";
+        String source = "https://baike.baidu.com/item/天长";
 
-        testConjecture(destination, source, 10);
+        testConjecture(destination, source, 100);
     }
 
     /**
@@ -40,6 +42,45 @@ public class WikiPhilosophy {
      * @throws IOException
      */
     public static void testConjecture(String destination, String source, int limit) throws IOException {
-        // TODO: FILL THIS IN!
+        String url = source;
+        for (int i = 0; i < limit; i++) {
+            if (visited.contains(url)) {
+                System.err.println("We're in a loop, exiting");
+                return;
+            } else {
+                visited.add(url);
+            }
+
+            final Element ele = getFirstValidLink(url);
+            if (ele == null) {
+                System.err.println("Got to a page with no valid links.");
+                return;
+            }
+
+            System.out.println("**" + ele.text() + "**");
+            url = ele.attr("abs:href");
+
+            if (url.equals(destination)) {
+                System.out.println("Eureka!");
+                break;
+            }
+        }
+    }
+
+    /**
+     * Loads and parses a URL, then extracts the first link.
+     *
+     * @param url url
+     * @return the Element of the first link, or null
+     */
+    public static Element getFirstValidLink(String url) throws IOException {
+        print("Fetching %s...", url);
+        final Elements paragraphs = wf.fetchWikipedia(url);
+        WikiParser wp = new WikiParser(paragraphs);
+        return wp.findFirstLink();
+    }
+
+    private static void print(String msg, Object... args) {
+        System.out.println(String.format(msg, args));
     }
 }

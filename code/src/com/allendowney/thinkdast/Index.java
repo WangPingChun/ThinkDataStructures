@@ -1,22 +1,21 @@
 package com.allendowney.thinkdast;
 
+import org.jsoup.select.Elements;
+
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
-
-import org.jsoup.select.Elements;
 
 /**
  * Encapsulates a map from search term to set of TermCounter.
  *
  * @author downey
- *
  */
 public class Index {
 
-    private Map<String, Set<TermCounter>> index = new HashMap<String, Set<TermCounter>>();
+    private final Map<String, Set<TermCounter>> index = new HashMap<>();
 
     /**
      * Adds a TermCounter to the set associated with `term`.
@@ -29,7 +28,7 @@ public class Index {
 
         // if we're seeing a term for the first time, make a new Set
         if (set == null) {
-            set = new HashSet<TermCounter>();
+            set = new HashSet<>();
             index.put(term, set);
         }
         // otherwise we can modify an existing Set
@@ -51,12 +50,13 @@ public class Index {
      */
     public void printIndex() {
         // loop through the search terms
-        for (String term: keySet()) {
+        for (String term : keySet()) {
             System.out.println(term);
 
             // for each term, print the pages where it appears
+            // 对于每个搜索词,打印其出现的页面和出现频率
             Set<TermCounter> tcs = get(term);
-            for (TermCounter tc: tcs) {
+            for (TermCounter tc : tcs) {
                 Integer count = tc.get(term);
                 System.out.println("    " + tc.getLabel() + " " + count);
             }
@@ -75,15 +75,18 @@ public class Index {
     /**
      * Add a page to the index.
      *
-     * @param url         URL of the page.
-     * @param paragraphs  Collection of elements that should be indexed.
+     * @param url        URL of the page.
+     * @param paragraphs Collection of elements that should be indexed.
      */
     public void indexPage(String url, Elements paragraphs) {
-        // TODO: Your code here
-
         // make a TermCounter and count the terms in the paragraphs
+        final TermCounter termCounter = new TermCounter(url);
+        termCounter.processElements(paragraphs);
 
         // for each term in the TermCounter, add the TermCounter to the index
+        for (String keyword : termCounter.keySet()) {
+            add(keyword, termCounter);
+        }
     }
 
     /**
@@ -92,7 +95,7 @@ public class Index {
      */
     public static void main(String[] args) throws IOException {
 
-        WikiFetcher wf = new WikiFetcher();
+        WikiFetcher wf = WikiFetcher.getInstance();
         Index indexer = new Index();
 
         String url = "https://en.wikipedia.org/wiki/Java_(programming_language)";
